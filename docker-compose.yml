@@ -1,0 +1,50 @@
+version: '3.3'
+
+services:
+  web:
+    container_name: "web"
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./src:/src
+    ports:
+      - "8000:8000"
+    restart: always
+    depends_on:
+      - minio
+      - pg_base
+
+  minio:
+    image: minio/minio
+    container_name: "minio"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "miniopassword"
+    volumes:
+      - .minio_data:/src/minio_data
+    command: server /data --console-address ":9001"
+
+  pg_base:
+    container_name: "pg_base"
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=memes
+    volumes:
+      - .pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d memes -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
