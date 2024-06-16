@@ -18,7 +18,7 @@ def test_add_meme():
     }
 
     response = requests.post(
-        "http://localhost:8000/memes",
+        f"http://localhost:8000/memes?text={text}",
         data={"text": text},
         files=files
     )
@@ -31,16 +31,12 @@ def test_update_meme():
     meme_id = random.randint(1, 1000)
     text = f"test {meme_id}"
 
-    with open("./1dOSgL-c-vI.jpg", "rb") as f:
-        image = f.read()
-
     files = {
         "image": ("1dOSgL-c-vI.jpg", open("./1dOSgL-c-vI.jpg", "rb"), "image/jpeg"),
     }
 
     response = requests.put(
-        f"http://localhost:8000/memes/{meme_id}",
-        data={"text": text},
+        f"http://localhost:8000/memes/{meme_id}?text={text}",
         files=files
     )
 
