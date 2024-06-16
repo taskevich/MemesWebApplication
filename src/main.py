@@ -2,12 +2,13 @@ import io
 import os
 import uuid
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Request
 from sqlalchemy import func, text
+from starlette.responses import StreamingResponse
 
 from src.backend.models import SessionManager, Memes
 from src.backend.schemas import UpdateMemeResponse, MemesResponse, MemeResponse, MemeItem, AddMemeResponse, \
-    DeleteMemeResponse
+    DeleteMemeResponse, DefaultResponse
 from src.backend import minio_client, BUCKET_NAME
 from src.backend.utils import run_parallel
 from src.backend.logger import logger
@@ -30,7 +31,7 @@ def startup():
 
 
 @app.get("/memes", response_model=MemesResponse)
-def get_memes(limit: int = 20, offset: int = 0, sort: str = "asc"):
+def get_memes(request: Request, limit: int = 20, offset: int = 0, sort: str = "asc"):
     """
         Список мемов
     """
@@ -47,7 +48,7 @@ def get_memes(limit: int = 20, offset: int = 0, sort: str = "asc"):
             payload=[
                 MemeItem(
                     id=meme_element.id,
-                    path=meme_element.minio_path,
+                    path=f"{request.base_url}memes/image/{meme_element.minio_path}",
                     text=meme_element.text
                 )
                 for meme_element in memes
@@ -56,7 +57,7 @@ def get_memes(limit: int = 20, offset: int = 0, sort: str = "asc"):
 
 
 @app.get("/memes/{meme_id}", response_model=MemeResponse)
-def get_concrete_meme(meme_id: str):
+def get_concrete_meme(request: Request, meme_id: str):
     """
         Получение всех мемов
     """
@@ -69,10 +70,20 @@ def get_concrete_meme(meme_id: str):
         return MemeResponse(
             payload=MemeItem(
                 id=meme.id,
-                path=meme.minio_path,
+                path=f"{request.base_url}memes/image/{meme.minio_path}",
                 text=meme.text
             )
         )
+
+
+@app.get("/memes/image/{file_name}")
+def get_minio_image(file_name: str):
+    try:
+        obj = minio_client.get_object(BUCKET_NAME, file_name)
+        return StreamingResponse(obj, media_type="image/jpeg")
+    except Exception as ex:
+        logger.error(f"Error to get minio object: {ex}")
+        return DefaultResponse(error=True, message="Не удалось получить мем")
 
 
 @app.post("/memes", response_model=AddMemeResponse)

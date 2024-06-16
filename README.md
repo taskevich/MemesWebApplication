@@ -1,9 +1,12 @@
 # Запуск
-Для зспуска потребуется установленный докер и прописать в cmd/terminal: 
+Для запуска потребуется установленный докер и прописать в cmd/terminal: 
 
-`docker compose up --build` || `docker-compose up --build`
+1) `docker compose up --build` || `docker-compose up --build`
+2) Зайти в minio панель и в настройках bucket `Access Policy` установить `Public`
 
 # Функционал
+
+- GET /memes/image/{file_name} - специальный маршрут для получения фото из bucket
 
 - GET /memes - получения списка мемов:
 
